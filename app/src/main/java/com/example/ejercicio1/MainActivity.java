@@ -3,6 +3,7 @@ package com.example.ejercicio1;
 import android.content.Intent;
 import android.os.Bundle;
 
+import com.example.ejercicio1.Adapter.ProductosAdapter;
 import com.example.ejercicio1.Modelos.Producto;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -12,6 +13,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.view.View;
 
@@ -21,6 +23,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -29,6 +32,12 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<Producto> productosList;
 
     private ActivityResultLauncher<Intent> launcherAddProducto;
+
+    //Recycler
+    private ProductosAdapter adapter;
+    private RecyclerView.LayoutManager layoutManager;
+
+    private NumberFormat nf;
 
 
 
@@ -41,6 +50,13 @@ public class MainActivity extends AppCompatActivity {
 
         setSupportActionBar(binding.toolbar);
         productosList = new ArrayList<>();
+        nf = NumberFormat.getCurrencyInstance();
+
+        calculaValoresFinales();
+        adapter = new ProductosAdapter(productosList,R.layout.producto_view_holder,this);
+        layoutManager = new GridLayoutManager(this, 1);
+        binding.contentMain.contenedor.setAdapter(adapter);
+        binding.contentMain.contenedor.setLayoutManager(layoutManager);
 
         inicializaLaunchers();
 
@@ -48,8 +64,7 @@ public class MainActivity extends AppCompatActivity {
         binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                launcherAddProducto.launch(new Intent(MainActivity.this, AddProductoActivity.class));
             }
         });
     }
@@ -62,10 +77,24 @@ public class MainActivity extends AppCompatActivity {
                     if (result.getData() != null && result.getData().getExtras() != null){
                         Producto p = (Producto) result.getData().getExtras().getSerializable("PROD");
                         productosList.add(p);
-                        Toast.makeText(MainActivity.this, p.toString(), Toast.LENGTH_SHORT).show();
+                        adapter.notifyItemInserted(productosList.size()-1);
+                        calculaValoresFinales();
                     }
                 }
             }
         });
+    }
+
+    public void calculaValoresFinales(){
+        int cantidadTotal = 0;
+        float imoorteTotal = 0f;
+
+        for (Producto p:productosList) {
+            cantidadTotal += p.getCantidad();
+            imoorteTotal += p.getCantidad() * p.getPrecio();
+        }
+
+        binding.contentMain.lbCantidadTotalMain.setText(String.valueOf(cantidadTotal));
+        binding.contentMain.lbPrecioTotalMain.setText(nf.format(imoorteTotal));
     }
 }
